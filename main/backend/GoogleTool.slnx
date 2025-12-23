@@ -1,0 +1,17 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitattributes" />
+    <File Path=".gitignore" />
+    <File Path="Directory.Build.props" />
+    <File Path="global.json" />
+    <File Path="README.md" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/GoogleTool.API/GoogleTool.API.csproj" />
+    <Project Path="src/GoogleTool.Common/GoogleTool.Common.csproj" />
+    <Project Path="src/GoogleTool.Crawler/GoogleTool.Crawler.csproj" Id="8fc74e74-9e7f-438d-9790-29f5ddbfa8e3" />
+    <Project Path="src/GoogleTool.Database/GoogleTool.Database.csproj" />
+    <Project Path="src/GoogleTool.UI/GoogleTool.UI.Client/GoogleTool.UI.Client.csproj" Id="dbc27821-9b16-4dc4-b16a-12ae19e80156" />
+    <Project Path="src/GoogleTool.UI/GoogleTool.UI/GoogleTool.UI.csproj" Id="894656c5-8613-4485-b554-80d4bca2556f" />
+  </Folder>
+</Solution>
