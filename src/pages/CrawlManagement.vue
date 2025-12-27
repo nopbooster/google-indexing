@@ -104,6 +104,7 @@
 
             <td class="action-cell">
               <button class="action-btn" @click="startCrawl(site.id)">Crawl</button>
+              <button class="action-btn" @click="startIndex(site.id)">Index</button>
               <button class="action-btn view-details" @click="viewDetails(site.id)">
                 View
               </button>
@@ -259,6 +260,22 @@ const queueForCrawl = async () => {
     handleAuthError(err)
   }
 }
+
+const startIndex = async (id: number) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "Are you sure, you want to index this site?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes",
+    cancelButtonText: "No",
+  });
+
+  console.log(id);
+  if (!result.isConfirmed) return
+}
+
+
 
 const startCrawl = async (id: number) => {
   try {

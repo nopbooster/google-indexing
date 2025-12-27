@@ -10,31 +10,72 @@
     </div>
 
     <div class="summary-card">
-  <div class="summary-item">
-    <span class="label">Total URLs</span>
-    <span class="value">{{ totalUrlCount }}</span>
-  </div>
-  <div class="summary-item">
-    <span class="label">Success</span>
-    <span class="value success">{{ successCount }}</span>
-  </div>
-  <div class="summary-item">
-    <span class="label">Failed</span>
-    <span class="value failed">{{ failedCount }}</span>
-  </div>
-</div>
+      <div class="summary-item">
+        <span class="label">Total URLs</span>
+        <span class="value">{{ totalUrlCount }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Valid Urls</span>
+        <span class="value success">{{ successCount }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Issues</span>
+        <span class="value failed">{{ failedCount }}</span>
+      </div>
+    </div>
 
+    <div class="summary-card">
+      <div class="summary-item">
+        <span class="label">Indexed</span>
+        <span class="value">{{ indexedCount }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Index Failed</span>
+        <span class="value success">{{ indexFailed }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="label">Index Queued</span>
+        <span class="value failed">{{ indexQueued }}</span>
+      </div>
+    </div>
 
-    <!-- Table -->
+    <!-- ================= ADDED: BULK BUTTON ================= -->
+    <div style="margin-bottom: 15px;">
+      <button
+        class="index-btn"
+        :disabled="selectedUrls.size === 0"
+        @click="indexSelectedUrls"
+      >
+        Index Selected URLs ({{ selectedUrls.size }})
+      </button>
+    </div>
+    <!-- ====================================================== -->
+
     <div class="table-card">
       <table class="urls-table">
         <thead>
           <tr>
+            <!-- ===== ADDED ===== -->
+            <th>
+              <input
+                type="checkbox"
+                :checked="isAllChecked"
+                @change="toggleSelectAll"
+              />
+            </th>
+            <!-- ================ -->
+
             <th>URL</th>
             <th>Status</th>
             <th>Status Code</th>
-            <th>indexed</th>
+            <th>index status</th>
+            <th>Indexed At</th>
+            <th>Index Result</th>
             <th>Crawled At</th>
+
+            <!-- ===== ADDED ===== -->
+            <th>Action</th>
+            <!-- ================ -->
           </tr>
         </thead>
 
@@ -44,6 +85,16 @@
             :key="index"
             :class="item.status.toLowerCase()"
           >
+            <!-- ===== ADDED ===== -->
+            <td>
+              <input
+                type="checkbox"
+                :checked="isSelected(item.url)"
+                @change="toggleRow(item.url)"
+              />
+            </td>
+            <!-- ================ -->
+
             <td class="url-cell">
               <a :href="item.url" target="_blank">{{ item.url }}</a>
             </td>
@@ -58,19 +109,31 @@
             </td>
 
             <td class="status-code">{{ item.statusCode }}</td>
-            <td>{{ item.isAlreadyIndexed?'Yes':'No' }}</td>
+            <td>{{ item.indexStatus || 'N/A' }}</td>
+            <td>{{ item.indexedAt || 'N/A' }}</td>
+            <td>{{ item.result || 'N/A' }}</td>
             <td>{{ item.crawledAt }}</td>
+
+            <!-- ===== ADDED ===== -->
+            <td>
+              <button
+                class="row-index-btn"
+                @click="indexSingleUrl(item.url)"
+              >
+                Index
+              </button>
+            </td>
+            <!-- ================ -->
           </tr>
 
           <tr v-if="urls.length === 0">
-            <td colspan="4" style="text-align:center; padding:20px">
+            <td colspan="7" style="text-align:center; padding:20px">
               No crawl data found
             </td>
           </tr>
         </tbody>
       </table>
 
-      <!-- Pagination -->
       <div class="pagination">
         <button
           class="pagination-btn"
@@ -98,109 +161,158 @@
 </template>
 
 <script setup lang="ts">
-  import { ref, computed, onMounted, watch } from 'vue'
-  import { useRoute } from 'vue-router'
-  import api from '../api' // axios instance
-  
-  interface CrawlCount {
-    totalCount: number
-    successCount: number
-    failedCount: number
-  }
-  
-  interface CrawledUrl {
-    url: string
-    status: 'Success' | 'Failed'
-    statusCode: number
-    crawledAt: string,
-    isAlreadyIndexed:boolean
-  }
-  
-  interface PageInfo {
-    page: number
-    pageSize: number
-    totalCount: number
-    hasNextPage: boolean
-    hasPreviousPage: boolean
-  }
-  
-  const route = useRoute()
-  const siteId = Number(route.params.siteId)
-  
-  const urls = ref<CrawledUrl[]>([])
-  const counts = ref<CrawlCount>({
-    totalCount: 0,
-    successCount: 0,
-    failedCount: 0,
-  })
-  
-  const pageInfo = ref<PageInfo>({
-    page: 1,
-    pageSize: 10,
-    totalCount: 0,
-    hasNextPage: false,
-    hasPreviousPage: false,
-  })
-  
-  /* ================= API CALLS ================= */
-  const fetchCrawlDetails = async () => {
-    try {
-      const res = await api.get(
-        `/crawl/${siteId}/details?PageNo=${pageInfo.value.page}&PageSize=${pageInfo.value.pageSize}`
-      )
-      urls.value = res.data.data
-      pageInfo.value = res.data.pageInfo
-    } catch (err) {
-      console.error('Failed to fetch crawl details', err)
-    }
-  }
-  
-  const fetchCrawlCounts = async () => {
-    try {
-      const res = await api.get(`/crawl/${siteId}/details-count`)
-      counts.value = res.data.data
-    } catch (err) {
-      console.error('Failed to fetch crawl counts', err)
-    }
-  }
-  
-  /* ================= LIFECYCLE ================= */
-  onMounted(() => {
-    fetchCrawlDetails()
-    fetchCrawlCounts()
-  })
-  
-  watch(() => pageInfo.value.page, fetchCrawlDetails)
-  
-  /* ================= COMPUTED ================= */
-  const totalUrlCount = computed(() => counts.value.totalCount)
-  const successCount = computed(() => counts.value.successCount)
-  const failedCount = computed(() => counts.value.failedCount)
-  
-  const totalPages = computed(() =>
-    Math.ceil(counts.value.totalCount / pageInfo.value.pageSize)
+import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import api from '../api'
+import Swal from "sweetalert2";
+
+interface CrawlCount {
+  totalCount: number
+  successCount: number
+  failedCount: number,
+  indexedCount: number,
+  indexFailed: number,
+  indexQueued: number
+}
+
+interface CrawledUrl {
+  url: string
+  status: 'Success' | 'Failed'
+  statusCode: number
+  crawledAt: string
+  indexStatus: string,
+  indexedAt:string,
+  result:string
+}
+
+interface PageInfo {
+  page: number
+  pageSize: number
+  totalCount: number
+  hasNextPage: boolean
+  hasPreviousPage: boolean
+}
+
+const route = useRoute()
+const siteId = Number(route.params.siteId)
+
+const urls = ref<CrawledUrl[]>([])
+
+/* ===== ADDED ===== */
+const selectedUrls = ref<Set<string>>(new Set())
+/* ================= */
+
+const counts = ref<CrawlCount>({
+  totalCount: 0,
+  successCount: 0,
+  failedCount: 0,
+  indexedCount:0,
+  indexFailed:0,
+  indexQueued:0
+})
+
+const pageInfo = ref<PageInfo>({
+  page: 1,
+  pageSize: 10,
+  totalCount: 0,
+  hasNextPage: false,
+  hasPreviousPage: false,
+})
+
+/* API CALLS */
+const fetchCrawlDetails = async () => {
+  const res = await api.get(
+    `/crawl/${siteId}/details?PageNo=${pageInfo.value.page}&PageSize=${pageInfo.value.pageSize}`
   )
-  
-  /* ================= PAGINATION ================= */
-  const nextPage = () => {
-    if (pageInfo.value.hasNextPage) pageInfo.value.page++
+  urls.value = res.data.data
+  pageInfo.value = res.data.pageInfo
+}
+
+const fetchCrawlCounts = async () => {
+  const res = await api.get(`/crawl/${siteId}/details-count`)
+  counts.value = res.data.data
+}
+
+/* ===== ADDED: SELECTION LOGIC ===== */
+const isSelected = (url: string) => selectedUrls.value.has(url)
+
+const toggleRow = (url: string) => {
+  selectedUrls.value.has(url)
+    ? selectedUrls.value.delete(url)
+    : selectedUrls.value.add(url)
+}
+
+const isAllChecked = computed(() =>
+  urls.value.length > 0 &&
+  urls.value.every(u => selectedUrls.value.has(u.url))
+)
+
+const toggleSelectAll = () => {
+  if (isAllChecked.value) {
+    urls.value.forEach(u => selectedUrls.value.delete(u.url))
+  } else {
+    urls.value.forEach(u => selectedUrls.value.add(u.url))
   }
-  
-  const previousPage = () => {
-    if (pageInfo.value.hasPreviousPage) pageInfo.value.page--
-  }
-  
-  /* ================= UTILITIES ================= */
-  // const formatDate = (date: string) => {
-  //   return new Date(date).toLocaleDateString('en-US', {
-  //     year: 'numeric',
-  //     month: 'short',
-  //     day: 'numeric',
-  //     hour: '2-digit',
-  //     minute: '2-digit',
-  //   })
-  // }
-  </script>
+}
+
+const indexSelectedUrls = async () => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "Do you want to index this selected urls?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes",
+    cancelButtonText: "No",
+  });
+
+  if (!result.isConfirmed) return
+
+}
+
+const indexSingleUrl = async (url: string) => {
+  const result = await Swal.fire({
+    title: "Are you sure?",
+    text: "Do you want to index this url?",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: "Yes",
+    cancelButtonText: "No",
+  });
+
+  if (!result.isConfirmed) return
+
+}
+/* ================================= */
+
+onMounted(() => {
+  fetchCrawlDetails()
+  fetchCrawlCounts()
+})
+
+watch(() => pageInfo.value.page, fetchCrawlDetails)
+
+/* COMPUTED */
+const totalUrlCount = computed(() => counts.value.totalCount)
+const successCount = computed(() => counts.value.successCount)
+const failedCount = computed(() => counts.value.failedCount)
+
+const indexedCount = computed(() => counts.value.indexedCount)
+const indexFailed = computed(() => counts.value.indexFailed)
+const indexQueued = computed(() => counts.value.indexQueued)
+
+const totalPages = computed(() =>
+  Math.ceil(counts.value.totalCount / pageInfo.value.pageSize)
+)
+
+/* PAGINATION */
+const nextPage = () => {
+  if (pageInfo.value.hasNextPage) pageInfo.value.page++
+}
+
+const previousPage = () => {
+  if (pageInfo.value.hasPreviousPage) pageInfo.value.page--
+}
+</script>
 
   <style scoped>
   .page-container {
@@ -408,5 +520,30 @@
       gap: 10px;
     }
   }
+
+  /* ===== ADDED ONLY ===== */
+.index-btn {
+  padding: 8px 14px;
+  background: #22c55e;
+  color: #fff;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.index-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.row-index-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
   </style>
   

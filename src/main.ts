@@ -13,11 +13,9 @@ import 'vue-toastification/dist/index.css';
 // Import pages
 import Dashboard from "./pages/Dashboard.vue";
 import SiteManagement from "./pages/SiteManagement.vue";
-import Index from "./pages/IndexManagement.vue";
 import Settings from "./pages/Settings.vue";
 import CrawlManagement from "./pages/CrawlManagement.vue";
 import CrawlDetails from "./pages/CrawlDetails.vue";
-import IndexDetails from "./pages/IndexDetails.vue";
 
 import Login from "./pages/Login.vue";
 
@@ -38,9 +36,6 @@ const routes = [
     children: [
       { path: "dashboard", component: Dashboard, meta: { requiresAuth: true } },
       { path: "sites", component: SiteManagement, meta: { requiresAuth: true } },
-      { path: "index", component: Index, meta: { requiresAuth: true } },
-      { path: "index-details/:siteId",name: 'IndexDetails', component: IndexDetails, meta: { requiresAuth: true } },
-
       {
         path: "settings",
         component: Settings,

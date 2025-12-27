@@ -20,12 +20,7 @@
 
       <router-link to="/crawl-management" class="menu-item" active-class="active">
         <span class="menu-icon">🕷️</span>
-        <span v-if="!collapsed" class="menu-label">Crawl Management</span>
-      </router-link>
-
-      <router-link to="/index" class="menu-item" active-class="active">
-        <span class="menu-icon">📈</span>
-        <span v-if="!collapsed" class="menu-label">Google Indexing</span>
+        <span v-if="!collapsed" class="menu-label">Crawl & Index</span>
       </router-link>
 
       <!-- Settings submenu -->
