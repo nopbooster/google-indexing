@@ -14,8 +14,8 @@ import 'vue-toastification/dist/index.css';
 import Dashboard from "./pages/Dashboard.vue";
 import SiteManagement from "./pages/SiteManagement.vue";
 import Settings from "./pages/Settings.vue";
-import CrawlManagement from "./pages/CrawlManagement.vue";
-import CrawlDetails from "./pages/CrawlDetails.vue";
+import CrawlIndexManagement from "./pages/CrawlIndexManagement.vue";
+import CrawlIndexDetails from "./pages/CrawlIndexDetails.vue";
 
 import Login from "./pages/Login.vue";
 
@@ -56,8 +56,8 @@ const routes = [
         ]
       },
 
-      { path: "crawl-management", component: CrawlManagement, meta: { requiresAuth: true } },
-      { path: "crawl-details/:siteId",name: 'CrawlDetails', component: CrawlDetails, meta: { requiresAuth: true } },
+      { path: "crawl-index-management", component: CrawlIndexManagement, meta: { requiresAuth: true } },
+      { path: "crawl-index-details/:siteId",name: 'CrawlIndexDetails', component: CrawlIndexDetails, meta: { requiresAuth: true } },
     ],
   },
 

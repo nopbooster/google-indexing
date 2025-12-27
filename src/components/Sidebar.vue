@@ -18,7 +18,7 @@
         <span v-if="!collapsed" class="menu-label">Site Management</span>
       </router-link>
 
-      <router-link to="/crawl-management" class="menu-item" active-class="active">
+      <router-link to="/crawl-index-management" class="menu-item" active-class="active">
         <span class="menu-icon">🕷️</span>
         <span v-if="!collapsed" class="menu-label">Crawl & Index</span>
       </router-link>

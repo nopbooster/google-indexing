@@ -4,8 +4,8 @@
     <!-- Header -->
     <div class="page-header">
       <div>
-        <h1 class="page-title">Crawl Management</h1>
-        <p class="subtitle">Manage and monitor web crawls for your active sites</p>
+        <h1 class="page-title">Crawl & Index Management</h1>
+        <p class="subtitle">Take control of your website crawls and indexing effortlessly.</p>
       </div>
 
       <button
@@ -304,7 +304,7 @@ const startCrawl = async (id: number) => {
 
 /* ================= UTIL ================= */
 const viewDetails = (id: number) => {
-  router.push({ name: 'CrawlDetails', params: { siteId: id } })
+  router.push({ name: 'CrawlIndexDetails', params: { siteId: id } })
 }
 
 const getStatusClass = (status?: string) =>

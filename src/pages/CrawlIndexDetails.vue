@@ -1,12 +1,12 @@
 <template>
   <div class="page-container">
     <div class="page-header">
-      <router-link to="/crawl-management" class="back-link">
-        ← Back to Crawl Management
+      <router-link to="/crawl-index-management" class="back-link">
+        ← Back to Crawl & Index
       </router-link>
 
       <h1>Crawl Details</h1>
-      <p class="subtitle">URLs from the last crawl</p>
+      <p class="subtitle">URLs with index details</p>
     </div>
 
     <div class="summary-card">
