@@ -20,23 +20,37 @@
     <!-- Stats Cards -->
     <div class="stats-cards">
       <div class="stat-card">
-        <p class="stat-label">Total Active Sites</p>
-        <p class="stat-value total">{{ stats.activeSiteCount }}</p>
-      </div>
-
-      <div class="stat-card">
-        <p class="stat-label">Queued</p>
+        <p class="stat-label">Total Crawl Queued</p>
         <p class="stat-value queued">{{ stats.queuedCount }}</p>
       </div>
 
       <div class="stat-card">
-        <p class="stat-label">Crawled</p>
+        <p class="stat-label">Total Crawl Success</p>
         <p class="stat-value indexed">{{ stats.crawledCount }}</p>
       </div>
 
       <div class="stat-card">
-        <p class="stat-label">Failed</p>
+        <p class="stat-label">Total Crawl Failed</p>
         <p class="stat-value failed">{{ stats.failedCount }}</p>
+      </div>
+    </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-cards">
+
+      <div class="stat-card">
+        <p class="stat-label">Total Index Success</p>
+        <p class="stat-value queued">0</p>
+      </div>
+
+      <div class="stat-card">
+        <p class="stat-label">Total Index Queued</p>
+        <p class="stat-value indexed">0</p>
+      </div>
+
+      <div class="stat-card">
+        <p class="stat-label">Total Index Failed</p>
+        <p class="stat-value failed">0</p>
       </div>
     </div>
 

@@ -5,7 +5,7 @@
         ← Back to Crawl & Index
       </router-link>
 
-      <h1>Crawl Details</h1>
+      <h1>Crawl & Index Details</h1>
       <p class="subtitle">URLs with index details</p>
     </div>
 
@@ -27,15 +27,15 @@
     <div class="summary-card">
       <div class="summary-item">
         <span class="label">Indexed</span>
-        <span class="value">{{ indexedCount }}</span>
+        <span class="value">0</span>
       </div>
       <div class="summary-item">
         <span class="label">Index Failed</span>
-        <span class="value success">{{ indexFailed }}</span>
+        <span class="value success">0</span>
       </div>
       <div class="summary-item">
         <span class="label">Index Queued</span>
-        <span class="value failed">{{ indexQueued }}</span>
+        <span class="value failed">0</span>
       </div>
     </div>
 
