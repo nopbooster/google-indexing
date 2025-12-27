@@ -1,138 +1,135 @@
 <template>
   <div class="page-container">
-    <!-- Header -->
-    <div class="page-header">
+    <!-- Schedule Settings -->
+    <div class="card">
+      <div class="card-header">
+        <span class="icon green">⏰</span>
+        <div>
+          <h3>Schedule Settings</h3>
+          <p>Configure when and how URLs should be processed for indexing</p>
+        </div>
+      </div>
       <div>
-        <h1>Schedule Configuration</h1>
-        <p class="subtitle">Configure automated URL indexing schedule</p>
+          <!-- Hang Fire Button -->
+          <button class="btn hangfire hangfire-btn" @click="goToHangfire" title="Hangfire Dashboard">Jobs</button>
+        </div>
+      <!-- Form -->
+      <div v-if="loading">
+        <p>Loading schedule...</p>
       </div>
-
-      <div class="header-actions">
-        <button class="btn primary">💾 Save Configuration</button>
-      </div>
-    </div>
-
-    <!-- Current Site -->
-    <div class="card site-card">
-      <div class="site-title">Current Site</div>
-      <div class="site-value">
-        <span class="dot"></span>
-        sc-domain:v0-salon-ui-components.vercel.app
-      </div>
-      <p class="hint">Use the global site selector in the header to change sites</p>
-    </div>
-
-    <!-- Main Grid -->
-    <div class="grid">
-      <!-- Schedule Settings -->
-      <div class="card">
-        <div class="card-header">
-          <span class="icon green">⏰</span>
-          <div>
-            <h3>Schedule Settings</h3>
-            <p>Configure when and how URLs should be processed</p>
-          </div>
+      <div class="form-grid" v-else>
+        <div class="form-group">
+          <label>Frequency</label>
+          <select v-model="frequencyLabel">
+            <option value="Hourly">Hourly</option>
+            <option value="Daily">Daily</option>
+            <option value="Weekly">Weekly</option>
+          </select>
+          <small>How often the queue should be processed</small>
         </div>
 
-        <!-- Toggle -->
-        <div class="toggle-row">
-          <label class="toggle">
-            <input type="checkbox" v-model="enabled" />
-            <span class="slider"></span>
-          </label>
-          <span>Enable Scheduled Processing</span>
+        <div class="form-group">
+          <label>Maximum URLs Per Run</label>
+          <input type="number" v-model.number="maxUrls" />
+          <small>Maximum number of URLs per run</small>
         </div>
 
-        <!-- Form -->
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Frequency</label>
-            <select>
-              <option>Daily</option>
-              <option>Hourly</option>
-              <option>Weekly</option>
-            </select>
-            <small>How often the queue should be processed</small>
-          </div>
+        <div class="form-group">
+          <label>Start Time</label>
+          <input type="time" v-model="startTime" />
+          <small>Time of day to start processing</small>
+        </div>
 
-          <div class="form-group">
-            <label>Maximum URLs Per Run</label>
-            <input type="number" value="50" />
-            <small>Maximum number of URLs per run</small>
-          </div>
-
-          <div class="form-group">
-            <label>Start Time</label>
-            <input type="time" value="08:00" />
-            <small>Time of day to start processing</small>
-          </div>
-
-          <div class="form-group">
-            <label>End Time</label>
-            <input type="time" value="20:00" />
-            <small>Time of day to stop processing</small>
-          </div>
-
-          <div class="form-group full">
-            <label>Priority Order</label>
-            <input type="text" value="High,Medium,Low" />
-            <small>Order in which URL priorities should be processed</small>
-          </div>
+        <div class="form-group">
+          <label>End Time</label>
+          <input type="time" v-model="endTime" />
+          <small>Time of day to stop processing</small>
         </div>
       </div>
 
-      <!-- Right Column -->
-      <div class="right-column">
-        <!-- Job History -->
-        <div class="card">
-          <div class="card-header">
-            <span class="icon yellow">🕒</span>
-            <div>
-              <h3>Job History</h3>
-              <p>Recent processing jobs</p>
-            </div>
-          </div>
-
-          <table class="history-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th>Status</th>
-                <th>URLs</th>
-                <th>Errors</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="6" class="empty">No job history available</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Quick Actions -->
-        <div class="card">
-          <div class="card-header">
-            <span class="icon red">⚡</span>
-            <div>
-              <h3>Quick Actions</h3>
-              <p>Manual processing options</p>
-            </div>
-          </div>
-
-          <button class="btn primary full">▶ Run Processing Now</button>
-          <button class="btn outline full">🗑 Clear Job History</button>
-        </div>
+      <!-- Save Button -->
+      <div style="margin-top: 20px;">
+        <button class="btn primary" :disabled="saving" @click="saveConfig">
+          {{ saving ? 'Saving...' : '💾 Save Configuration' }}
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-const enabled = ref(true)
+import { ref, onMounted } from 'vue'
+import api from '../api' // adjust this import to your project
+import { useToast } from 'vue-toastification'
+const toast = useToast()
+
+// Reactive fields
+const frequencyLabel = ref('Daily')
+const maxUrls = ref(50)
+const startTime = ref('08:00')
+const endTime = ref('20:00')
+
+// Loading and saving states
+const loading = ref(false)
+const saving = ref(false)
+
+// Frequency mapping between API numeric value and UI label
+const freqMap: Record<number, string> = { 1: 'Hourly', 7: 'Daily', 30: 'Weekly' }
+const reverseFreqMap: Record<string, number> = { 'Hourly': 1, 'Daily': 7, 'Weekly': 30 }
+
+// Load schedule from API
+const loadConfig = async () => {
+  loading.value = true
+  try {
+    const res = await api.get('/schedule/get')
+    const data = res.data?.data
+    if (data) {
+      frequencyLabel.value = freqMap[data.frequency] || 'Daily'
+      maxUrls.value = data.minUrls
+      startTime.value = data.startTime.slice(0, 5)
+      endTime.value = data.endTime.slice(0, 5)
+    }
+  } catch (err) {
+    console.error('Error fetching schedule:', err)
+    alert('Failed to load schedule')
+  } finally {
+    loading.value = false
+  }
+}
+
+// Save schedule via API
+const saveConfig = async () => {
+  saving.value = true
+  try {
+    const payload = {
+      frequency: reverseFreqMap[frequencyLabel.value],
+      minUrls: maxUrls.value,
+      startTime: startTime.value,
+      endTime: endTime.value
+    }
+
+    const res = await api.post('/schedule/update', payload)
+    if (res.data?.isSuccess) {
+      toast.success('Schedule saved successfully!')
+    } else {
+      toast.error('Failed to save schedule')
+    }
+  } catch (err) {
+    console.error('Error saving schedule:', err)
+    toast.error('Error saving schedule')
+  } finally {
+    saving.value = false
+  }
+}
+
+// Load schedule when component mounts
+onMounted(() => {
+  loadConfig()
+})
+
+const goToHangfire = () => {
+  window.open(import.meta.env.VITE_API_BASE_URL+'/hangfire', '_blank') // opens in a new tab
+}
 </script>
 
 <style scoped>
@@ -141,73 +138,12 @@ const enabled = ref(true)
   background: #f9fafb;
 }
 
-/* Header */
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-}
-
-.page-header h1 {
-  font-size: 26px;
-  font-weight: 700;
-}
-
-.subtitle {
-  font-size: 14px;
-  color: #6b7280;
-}
-
-.header-actions {
-  display: flex;
-  gap: 12px;
-}
-
-/* Cards */
+/* Card */
 .card {
   background: #fff;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
   padding: 20px;
-}
-
-/* Site */
-.site-card {
-  margin-bottom: 24px;
-}
-
-.site-title {
-  font-size: 13px;
-  color: #6b7280;
-  margin-bottom: 6px;
-}
-
-.site-value {
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  background: #2563eb;
-  border-radius: 50%;
-}
-
-/* Grid */
-.grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 
 /* Card Header */
@@ -237,53 +173,6 @@ const enabled = ref(true)
 }
 
 .icon.green { background: #dcfce7; }
-.icon.yellow { background: #fef9c3; }
-.icon.red { background: #fee2e2; }
-
-/* Toggle */
-.toggle-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.toggle {
-  position: relative;
-  width: 42px;
-  height: 22px;
-}
-
-.toggle input {
-  display: none;
-}
-
-.slider {
-  position: absolute;
-  inset: 0;
-  background: #d1d5db;
-  border-radius: 999px;
-}
-
-.slider::before {
-  content: '';
-  position: absolute;
-  height: 18px;
-  width: 18px;
-  left: 2px;
-  top: 2px;
-  background: #fff;
-  border-radius: 50%;
-  transition: 0.2s;
-}
-
-.toggle input:checked + .slider {
-  background: #2563eb;
-}
-
-.toggle input:checked + .slider::before {
-  transform: translateX(20px);
-}
 
 /* Form */
 .form-grid {
@@ -295,10 +184,6 @@ const enabled = ref(true)
 .form-group {
   display: flex;
   flex-direction: column;
-}
-
-.form-group.full {
-  grid-column: span 2;
 }
 
 label {
@@ -319,29 +204,7 @@ small {
   color: #6b7280;
 }
 
-/* Table */
-.history-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.history-table th {
-  text-align: left;
-  font-size: 12px;
-  color: #6b7280;
-  padding-bottom: 8px;
-}
-
-.history-table td {
-  padding: 14px 0;
-}
-
-.empty {
-  text-align: center;
-  color: #9ca3af;
-}
-
-/* Buttons */
+/* Button */
 .btn {
   padding: 8px 14px;
   border-radius: 6px;
@@ -352,22 +215,32 @@ small {
 .btn.primary {
   background: #2563eb;
   color: #fff;
+  border: none;
 }
 
-.btn.outline {
-  background: #fff;
-  border: 1px solid #d1d5db;
+/* Hangfire button */
+.btn.hangfire {
+  background: #f59e0b;
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
 }
 
-.btn.full {
-  width: 100%;
-  margin-top: 10px;
+.btn.hangfire:hover {
+  background: #d97706;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .grid {
-    grid-template-columns: 1fr;
-  }
+.card {
+  position: relative; /* make card the reference for absolute positioning */
 }
+
+.btn.hangfire.hangfire-btn {
+  position: absolute;
+  top: 20px; /* distance from top of card */
+  right: 20px; /* distance from right of card */
+}
+
 </style>
